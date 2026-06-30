@@ -1,0 +1,1301 @@
+FRONTEND_DESIGN_SPECIFICATION.md
+
+Careerpilot AI
+
+AI-Powered Career Intelligence Platform
+
+Frontend Version: 1.0
+
+Design System: Soft Neumorphism + Modern Minimalism
+
+Framework: React + TypeScript + TailwindCSS + shadcn/ui
+
+---
+
+Design Philosophy
+
+Careerpilot AI should NOT look like:
+
+- ChatGPT
+
+- LinkedIn
+
+- Naukri
+
+- Workday
+
+- Generic SaaS Dashboard
+
+- Bootstrap Admin Panel
+
+Instead, Careerpilot AI should feel like a Personal Career Operating System.
+
+The UI should communicate:
+
+- Intelligence
+
+- Calmness
+
+- Focus
+
+- Precision
+
+- Professionalism
+
+The user should feel like they are interacting with an AI assistant that understands their professional identity rather than using a traditional job portal.
+
+The interface should be distraction-free and intentionally minimal.
+
+---
+
+Design Language
+
+Think of the design as a combination of:
+
+- Apple Human Interface Guidelines
+
+- Linear
+
+- Raycast
+
+- Arc Browser
+
+- Notion
+
+- Vercel Dashboard
+
+Combined with:
+
+Soft Neumorphism
+
+NOT Glassmorphism.
+
+NOT Cyberpunk.
+
+NOT Neon.
+
+NOT Material Design.
+
+---
+
+Design Keywords
+
+Minimal
+
+Professional
+
+Soft
+
+Elegant
+
+Premium
+
+Timeless
+
+Calm
+
+Clean
+
+Organized
+
+High Readability
+
+Lots of Whitespace
+
+No Visual Noise
+
+---
+
+Design Goal
+
+The interface should disappear.
+
+The user should focus only on:
+
+Career
+
+Projects
+
+Jobs
+
+Applications
+
+AI Recommendations
+
+---
+
+Theme
+
+Dark Mode First
+
+Light Mode Later
+
+---
+
+Color Palette
+
+Background
+
+Primary
+
+#1B1B1F
+
+---
+
+Secondary
+
+#202127
+
+---
+
+Surface
+
+#262830
+
+---
+
+Elevated Surface
+
+#2E313A
+
+---
+
+Text Primary
+
+#F8F8F2
+
+---
+
+Text Secondary
+
+#A6A6B2
+
+---
+
+Accent Purple
+
+#7C5CFF
+
+---
+
+Accent Blue
+
+#5EA7FF
+
+---
+
+Accent Green
+
+#3ECF8E
+
+---
+
+Accent Orange
+
+#F59E42
+
+---
+
+Danger
+
+#EF4444
+
+---
+
+Border
+
+Very Soft
+
+Almost Invisible
+
+---
+
+Neumorphism Style
+
+Every interactive component should have:
+
+Soft Shadows
+
+Outer Shadow
+
+Inner Shadow
+
+Rounded Corners
+
+Soft Highlights
+
+Subtle Depth
+
+NOT Floating Cards
+
+NOT Heavy Shadows
+
+Everything should feel:
+
+Pressed into the interface
+
+or
+
+Raised gently.
+
+---
+
+Example
+
+Buttons
+
+Look like physical buttons.
+
+Cards
+
+Look like soft elevated surfaces.
+
+Inputs
+
+Appear carved into the interface.
+
+---
+
+Corner Radius
+
+Cards
+
+20px
+
+Buttons
+
+16px
+
+Inputs
+
+16px
+
+Dialogs
+
+24px
+
+Profile Image
+
+Circular
+
+Charts
+
+Rounded
+
+---
+
+Spacing System
+
+Use an 8px spacing system.
+
+8
+
+16
+
+24
+
+32
+
+40
+
+48
+
+64
+
+80
+
+Never random spacing.
+
+---
+
+Typography
+
+Heading Font
+
+Manrope
+
+or
+
+SF Pro Display
+
+Weight
+
+700
+
+---
+
+Body Font
+
+Inter
+
+Weight
+
+400
+
+500
+
+---
+
+Monospace
+
+JetBrains Mono
+
+Only for
+
+ATS Scores
+
+Logs
+
+IDs
+
+---
+
+Typography Scale
+
+Display
+
+48px
+
+Hero
+
+36px
+
+Section
+
+28px
+
+Card Title
+
+20px
+
+Body
+
+16px
+
+Caption
+
+14px
+
+Small
+
+12px
+
+---
+
+Icons
+
+Lucide Icons
+
+Only outline icons.
+
+No filled icons.
+
+No emoji icons.
+
+---
+
+Layout
+
+Desktop
+
+```
+
+──────────────────────────────────────────
+
+Sidebar
+
+Content
+
+──────────────────────────────────────────
+
+```
+
+Sidebar Width
+
+280px
+
+Content
+
+Fluid
+
+Maximum Width
+
+1600px
+
+Centered
+
+---
+
+Sidebar
+
+Permanent
+
+Contains
+
+CareerOS Logo
+
+Navigation
+
+User Profile
+
+Settings
+
+Theme Toggle
+
+Version
+
+---
+
+Navigation
+
+Dashboard
+
+Career Profile
+
+Resume Library
+
+Job Discovery
+
+Job Matches
+
+Resume Studio
+
+ATS Analyzer
+
+Resume Versions
+
+Applications
+
+Career Coach
+
+Settings
+
+---
+
+Sidebar Behavior
+
+Smooth Hover
+
+Soft Glow
+
+No abrupt transitions
+
+---
+
+Top Navigation
+
+Very Minimal
+
+Contains
+
+Search
+
+Notifications
+
+Quick Actions
+
+User Avatar
+
+---
+
+Dashboard
+
+Purpose
+
+Mission Control
+
+---
+
+Greeting
+
+Good Evening, Adhi
+
+Small motivational sentence.
+
+---
+
+Cards
+
+Resume Health
+
+ATS Average
+
+Applications
+
+Interviews
+
+Jobs Found Today
+
+Weekly Progress
+
+---
+
+Recent Activity Timeline
+
+Generated Resume
+
+Applied Job
+
+New Job Match
+
+Updated ATS Score
+
+---
+
+Charts
+
+Weekly Applications
+
+ATS Trend
+
+Skill Distribution
+
+Job Match Percentage
+
+---
+
+Quick Actions
+
+Generate Resume
+
+Import Resume
+
+Discover Jobs
+
+Career Insights
+
+---
+
+Career Profile
+
+Purpose
+
+Single Source of Truth
+
+---
+
+Sections
+
+Profile
+
+Skills
+
+Projects
+
+Experience
+
+Education
+
+Certifications
+
+Technologies
+
+Preferred Roles
+
+Preferred Locations
+
+---
+
+Every section editable.
+
+---
+
+Projects
+
+Each project shown as
+
+Beautiful expandable card.
+
+Contains
+
+Project Image
+
+Tech Stack
+
+Role
+
+Description
+
+Skills Used
+
+Repository
+
+Tags
+
+---
+
+Resume Library
+
+Display
+
+AI Resume
+
+ML Resume
+
+SDE Resume
+
+---
+
+Each Resume Card
+
+Preview
+
+Last Updated
+
+ATS Score
+
+Version Count
+
+Generate Resume
+
+Edit Resume
+
+---
+
+Job Discovery
+
+Purpose
+
+Discover jobs.
+
+---
+
+Search Bar
+
+Large
+
+Centered
+
+---
+
+Filters
+
+Role
+
+Location
+
+Salary
+
+Experience
+
+Remote
+
+Company Size
+
+Skills
+
+---
+
+Jobs
+
+Beautiful vertical cards.
+
+Each card
+
+Company
+
+Role
+
+Location
+
+Salary
+
+Match %
+
+Required Skills
+
+Buttons
+
+View JD
+
+Optimize Resume
+
+Save
+
+---
+
+Job Details
+
+Slide Over Panel
+
+Contains
+
+Full JD
+
+Company
+
+Salary
+
+Requirements
+
+Responsibilities
+
+Benefits
+
+Match Analysis
+
+---
+
+Resume Studio
+
+The most important page.
+
+Layout
+
+Three Columns
+
+```
+
+Resume
+
+↓
+
+AI Reasoning
+
+↓
+
+Generated Resume
+
+```
+
+Left
+
+Original Resume
+
+Middle
+
+AI Reasoning
+
+Right
+
+Generated Resume
+
+---
+
+Reasoning Panel
+
+Shows
+
+Changed Skills
+
+Added Keywords
+
+Moved Projects
+
+Removed Keywords
+
+ATS Improvement
+
+Every change explained.
+
+---
+
+Generate Button
+
+Large
+
+Bottom Center
+
+---
+
+ATS Analyzer
+
+Circular Score
+
+Large
+
+Center
+
+92
+
+---
+
+Metrics
+
+Keyword Match
+
+Skills
+
+Formatting
+
+Experience
+
+Projects
+
+Semantic Match
+
+---
+
+Improvement Suggestions
+
+Displayed as checklist.
+
+---
+
+Resume Versions
+
+Timeline Layout
+
+Resume V1
+
+↓
+
+Resume V2
+
+↓
+
+Resume V3
+
+Each shows
+
+Company
+
+ATS
+
+Date
+
+Changes
+
+Download
+
+Compare
+
+---
+
+Applications
+
+Kanban Board
+
+Columns
+
+Saved
+
+Applied
+
+OA
+
+Interview
+
+Offer
+
+Rejected
+
+Cards draggable.
+
+---
+
+Career Coach
+
+Looks like
+
+Personal AI Assistant
+
+Not chat.
+
+---
+
+Sections
+
+Weekly Insights
+
+Missing Skills
+
+Suggested Projects
+
+Recommended Courses
+
+Application Statistics
+
+Career Growth
+
+---
+
+Cards
+
+Should feel like AI generated reports.
+
+---
+
+Settings
+
+Theme
+
+Resume Templates
+
+LLM Selection
+
+Groq
+
+Ollama
+
+OpenAI
+
+Embedding Model
+
+Database Status
+
+API Keys
+
+Export Data
+
+Import Data
+
+---
+
+Animations
+
+Use
+
+Framer Motion
+
+Only subtle.
+
+Examples
+
+Card Hover
+
+Scale 1.02
+
+Shadow Increase
+
+Sidebar Expand
+
+Fade In
+
+Slide Up
+
+Loading Skeletons
+
+Progress Animation
+
+Number Count Animation
+
+No flashy effects.
+
+---
+
+Loading States
+
+Never show spinners.
+
+Use
+
+Skeleton UI
+
+Pulse Animation
+
+Progress Bar
+
+---
+
+Empty States
+
+Beautiful illustration.
+
+Helpful explanation.
+
+Primary CTA.
+
+---
+
+Notifications
+
+Small floating toast.
+
+Bottom Right.
+
+Rounded.
+
+Minimal.
+
+---
+
+Charts
+
+Recharts
+
+Rounded
+
+Minimal
+
+Soft Grid
+
+No bright colors.
+
+---
+
+Buttons
+
+Primary
+
+Purple
+
+Soft Shadow
+
+Rounded
+
+Secondary
+
+Gray
+
+Ghost
+
+Transparent
+
+Danger
+
+Red
+
+Minimal
+
+---
+
+Inputs
+
+Soft inset neumorphism.
+
+Rounded.
+
+No harsh borders.
+
+---
+
+Tables
+
+Rounded rows.
+
+Hover effect.
+
+Searchable.
+
+Sortable.
+
+Pagination.
+
+---
+
+Modals
+
+Centered
+
+Blur Background
+
+Soft Elevation
+
+Rounded 24px
+
+---
+
+Responsive Design
+
+Desktop First
+
+Tablet
+
+Mobile
+
+Sidebar becomes drawer.
+
+Cards become vertical.
+
+Tables become cards.
+
+---
+
+Folder Structure
+
+```
+
+src/
+
+assets/
+
+components/
+
+    common/
+
+    cards/
+
+    charts/
+
+    dashboard/
+
+    profile/
+
+    resumes/
+
+    jobs/
+
+    ats/
+
+    applications/
+
+    coach/
+
+    settings/
+
+layout/
+
+pages/
+
+    Dashboard/
+
+    CareerProfile/
+
+    ResumeLibrary/
+
+    JobDiscovery/
+
+    JobMatches/
+
+    ResumeStudio/
+
+    ATSAnalyzer/
+
+    ResumeVersions/
+
+    Applications/
+
+    CareerCoach/
+
+    Settings/
+
+hooks/
+
+services/
+
+utils/
+
+types/
+
+mock/
+
+    mockUsers.ts
+
+    mockJobs.ts
+
+    mockApplications.ts
+
+    mockResumes.ts
+
+    mockCareerProfile.ts
+
+constants/
+
+styles/
+
+routes/
+
+```
+
+---
+
+Tech Stack
+
+Frontend
+
+- React 19
+
+- TypeScript
+
+- Vite
+
+- TailwindCSS
+
+- shadcn/ui
+
+- Framer Motion
+
+- React Router
+
+- TanStack Query
+
+- Recharts
+
+- Lucide React
+
+- React Hook Form
+
+- Zod
+
+---
+
+Mock Data
+
+Generate realistic mock data for
+
+40 Job Listings
+
+3 Resume Templates
+
+150 Skills
+
+25 Projects
+
+12 Certifications
+
+30 Applications
+
+20 Resume Versions
+
+Weekly Analytics
+
+ATS Reports
+
+Career Insights
+
+Everything should behave like a real application.
+
+---
+
+Component Philosophy
+
+Every UI element should be reusable.
+
+Never build page-specific components if they can become shared components.
+
+Examples
+
+StatusCard
+
+MetricCard
+
+InsightCard
+
+TimelineCard
+
+SectionHeader
+
+SearchBar
+
+FilterPanel
+
+DataTable
+
+ProgressRing
+
+SkillBadge
+
+ProjectCard
+
+JobCard
+
+ResumeCard
+
+ApplicationCard
+
+ReasoningCard
+
+These components should power the entire application.
+
+---
+
+Final Experience
+
+The finished frontend should feel less like a job portal and more like using a premium desktop operating system dedicated to managing a professional career.
+
+When a recruiter, engineer, or developer opens CareerOS, the first impression should be:
+
+"This feels like a real AI product."
+
+The interface should communicate confidence, clarity, and intelligence through exceptional information hierarchy, thoughtful spacing, subtle neumorphic depth, and a calm visual language that keeps the focus on the user's career rather than the interface itself.
