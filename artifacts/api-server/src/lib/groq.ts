@@ -1,5 +1,5 @@
 import Groq from "groq-sdk";
-import { CareerProfileSchema } from "@workspace/api-zod";
+import { CareerProfileSchema, JobSchema } from "@workspace/api-zod";
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -102,4 +102,69 @@ export async function extractProfileFromText(rawText: string) {
     logger.error(error, "Failed to parse or validate Groq output");
     throw new Error("Invalid output structure from AI");
   }
+}
+
+const JOB_SYSTEM_PROMPT = `You are an expert job description parser.
+Your task is to extract structured data from a raw job posting (in any format — HTML, Markdown, or plain text) and output ONLY valid JSON.
+
+Rules:
+1. Extract the company name, job title/role, location, salary (if stated), and employment type (Full-time, Part-time, Contract, Remote, etc.)
+2. Extract ALL required skills and technologies mentioned in the job description into the \`requiredSkills\` array.
+3. Write a clean, well-formatted description summarizing the role: what the team does, what the candidate will work on, and key responsibilities.
+4. DO NOT make up information. If a field is not present, set it to null.
+5. Return ONLY the JSON object, no markdown or extra text.
+
+The JSON schema you MUST follow is:
+{
+  "company": "string",
+  "role": "string",
+  "location": "string | null",
+  "salary": "string | null",
+  "type": "string | null",
+  "description": "string | null",
+  "requiredSkills": ["string"]
+}`;
+
+export async function extractJobFromText(rawText: string) {
+  const completion = await groq.chat.completions.create({
+    messages: [
+      { role: "system", content: JOB_SYSTEM_PROMPT },
+      { role: "user", content: `Extract structured job data from the following job posting:\n\n${rawText.slice(0, 12000)}` },
+    ],
+    model: "llama-3.3-70b-versatile",
+    temperature: 0,
+    response_format: { type: "json_object" },
+  });
+
+  const rawJson = completion.choices[0]?.message?.content;
+  if (!rawJson) throw new Error("Failed to generate job JSON from Groq");
+
+  try {
+    const parsed = JSON.parse(rawJson);
+    return JobSchema.parse(parsed);
+  } catch (error: any) {
+    if (error?.name === "ZodError") {
+      const zodErrors = error.issues.map((i: any) => `${i.path.join(".")}: ${i.message}`).join(", ");
+      throw new Error(`Invalid job structure from AI: ${zodErrors}`);
+    }
+    throw new Error("Invalid job structure from AI");
+  }
+}
+
+/**
+ * Compute a 0–100 match score by comparing job required skills
+ * against the user's stored skills (case-insensitive).
+ */
+export function computeMatchScore(userSkills: string[], jobSkills: string[]): number {
+  if (!jobSkills || jobSkills.length === 0) return 0;
+  if (!userSkills || userSkills.length === 0) return 0;
+
+  const normalizedUser = userSkills.map(s => s.toLowerCase().trim());
+  
+  const matches = jobSkills.filter(jobSkill => {
+    const jLower = jobSkill.toLowerCase().trim();
+    return normalizedUser.some(uSkill => uSkill.includes(jLower) || jLower.includes(uSkill));
+  });
+
+  return Math.round((matches.length / jobSkills.length) * 100);
 }

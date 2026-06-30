@@ -4,3 +4,4 @@ export * from "./experience";
 export * from "./projects";
 export * from "./education";
 export * from "./certifications";
+export * from "./jobs";
