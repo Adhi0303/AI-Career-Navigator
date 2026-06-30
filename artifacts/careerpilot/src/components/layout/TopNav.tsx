@@ -15,7 +15,7 @@ export function TopNav() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-[280px] bg-sidebar border-r-border">
-            <Sidebar />
+            <Sidebar collapsed={false} onToggle={() => {}} />
           </SheetContent>
         </Sheet>
       </div>

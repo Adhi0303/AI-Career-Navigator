@@ -2,7 +2,7 @@ import { Router, type Request, type Response, type RequestHandler } from "expres
 import multer from "multer";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+const { PDFParse } = require("pdf-parse");
 import { extractProfileFromText } from "../lib/groq";
 
 const resumeRouter = Router();
@@ -14,6 +14,7 @@ const upload = multer({
 });
 
 const parseResumeHandler: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  let parser: any = null;
   try {
     if (!req.file) {
       res.status(400).json({ success: false, error: "No file uploaded" });
@@ -27,7 +28,8 @@ const parseResumeHandler: RequestHandler = async (req: Request, res: Response): 
     }
 
     // 1. Extract text from PDF
-    const pdfData = await pdfParse(req.file.buffer);
+    parser = new PDFParse({ data: req.file.buffer });
+    const pdfData = await parser.getText();
     const rawText = pdfData.text;
 
     if (!rawText || rawText.trim().length === 0) {
@@ -44,14 +46,22 @@ const parseResumeHandler: RequestHandler = async (req: Request, res: Response): 
       profile,
     });
   } catch (error: any) {
-    req.log.error("Resume parsing error:", error);
+    req.log.error(error, "Resume parsing error");
     res.status(500).json({ 
       success: false, 
       error: error.message || "Failed to process resume" 
     });
+  } finally {
+    if (parser) {
+      try {
+        await parser.destroy();
+      } catch (err) {
+        req.log.error(err, "Failed to destroy parser");
+      }
+    }
   }
 };
 
-resumeRouter.post("/api/resume/parse", upload.single("file"), parseResumeHandler);
+resumeRouter.post("/resume/parse", upload.single("file"), parseResumeHandler);
 
 export default resumeRouter;

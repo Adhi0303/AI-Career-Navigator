@@ -49,11 +49,6 @@ export default function AtsAnalyzer() {
               <Progress 
                 value={metric.score} 
                 className="h-2"
-                indicatorClassName={
-                  metric.score >= 90 ? 'bg-primary' : 
-                  metric.score >= 80 ? 'bg-accent' : 
-                  'bg-destructive'
-                }
               />
             </div>
           ))}

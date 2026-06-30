@@ -8,7 +8,7 @@ const groq = new Groq({
 const SYSTEM_PROMPT = `
 You are an expert HR Information Extraction AI. 
 Your task is to take the raw text extracted from a resume and convert it into a strictly formatted JSON object that matches the requested schema.
-Do NOT hallucinate information. If a field is not present in the resume text, omit it or leave it as an empty string/array according to the schema.
+Do NOT hallucinate information. If a field is not present in the resume text, omit it entirely from the JSON object. Do NOT return empty strings for emails, URLs, or dates (instead, completely omit those keys). Only return empty arrays for lists (skills, experience, projects, education, certifications, languages) if no items are found.
 Ensure dates are kept in their original format or normalized to YYYY-MM if possible.
 
 The JSON schema you MUST follow is:
@@ -57,6 +57,8 @@ The JSON schema you MUST follow is:
 }
 `;
 
+import { logger } from "./logger";
+
 export async function extractProfileFromText(rawText: string) {
   const completion = await groq.chat.completions.create({
     messages: [
@@ -85,8 +87,13 @@ export async function extractProfileFromText(rawText: string) {
     // Validate against our Zod schema
     const validatedProfile = CareerProfileSchema.parse(parsedObj);
     return validatedProfile;
-  } catch (error) {
-    console.error("Failed to parse or validate Groq output:", error, "\nRaw Output:", rawJson);
+  } catch (error: any) {
+    if (error && error.name === "ZodError") {
+      const zodErrors = error.issues.map((i: any) => `${i.path.join(".")}: ${i.message}`).join(", ");
+      logger.error({ issues: error.issues, rawJson }, "Zod validation failed");
+      throw new Error(`Invalid output structure from AI: ${zodErrors}`);
+    }
+    logger.error(error, "Failed to parse or validate Groq output");
     throw new Error("Invalid output structure from AI");
   }
 }

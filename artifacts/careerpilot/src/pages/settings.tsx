@@ -8,7 +8,8 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Key, Database, Download, Upload, Badge } from 'lucide-react';
+import { Save, Key, Database, Download, Upload } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
