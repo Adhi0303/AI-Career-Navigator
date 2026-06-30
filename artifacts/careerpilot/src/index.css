@@ -49,7 +49,51 @@
   --font-mono: var(--app-font-mono);
 }
 
-:root, .dark {
+/* ── Light mode ─────────────────────────────── */
+:root {
+  --background: 36 20% 96%;      /* #F6F3EE — warm off-white */
+  --foreground: 36 15% 10%;      /* #1C1A16 — near-black warm */
+
+  --card: 0 0% 100%;             /* pure white cards */
+  --card-foreground: 36 15% 10%;
+  --card-border: 36 10% 88%;
+
+  --sidebar: 36 15% 92%;         /* #EDE9E2 — warm light sidebar */
+  --sidebar-foreground: 36 15% 10%;
+  --sidebar-border: 36 10% 85%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 36 15% 10%;
+  --popover-border: 36 10% 88%;
+
+  --primary: 38 52% 50%;         /* #C9A96E darkened for light bg */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 36 12% 90%;       /* #E8E4DC — soft warm gray */
+  --secondary-foreground: 36 15% 10%;
+
+  --muted: 36 12% 90%;
+  --muted-foreground: 36 8% 45%; /* #77736A — warm mid gray */
+
+  --accent: 36 12% 86%;
+  --accent-foreground: 36 15% 10%;
+
+  --destructive: 4 60% 48%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 36 10% 86%;
+  --input: 36 10% 86%;
+  --ring: 38 52% 50%;
+
+  --app-font-sans: 'Inter', sans-serif;
+  --app-font-serif: 'Manrope', sans-serif;
+  --app-font-mono: 'JetBrains Mono', monospace;
+
+  --radius: 0.75rem;
+}
+
+/* ── Dark mode ──────────────────────────────── */
+.dark {
   --background: 36 10% 6%;      /* #0D0C0A — deep warm near-black */
   --foreground: 40 20% 92%;     /* #ECE8DF — warm cream */
 
@@ -74,7 +118,7 @@
   --muted: 36 7% 13%;
   --muted-foreground: 36 5% 42%; /* #6B6760 — warm medium gray */
 
-  --accent: 36 7% 16%;          /* subtle hover/accent surface */
+  --accent: 36 7% 16%;
   --accent-foreground: 40 20% 92%;
 
   --destructive: 4 50% 52%;     /* #C0544A — muted terracotta red */
