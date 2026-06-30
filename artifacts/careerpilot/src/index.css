@@ -50,39 +50,39 @@
 }
 
 :root, .dark {
-  --background: 240 6% 11%;     /* #1B1B1F */
-  --foreground: 60 30% 96%;     /* #F8F8F2 */
-  
-  --card: 228 11% 17%;          /* #262830 */
-  --card-foreground: 60 30% 96%;
-  --card-border: 240 7% 15%;    /* Subtle */
+  --background: 36 10% 6%;      /* #0D0C0A — deep warm near-black */
+  --foreground: 40 20% 92%;     /* #ECE8DF — warm cream */
 
-  --sidebar: 231 10% 14%;       /* #202127 */
-  --sidebar-foreground: 60 30% 96%;
-  --sidebar-border: 240 7% 15%;
+  --card: 36 8% 10%;            /* #1A1916 — warm dark surface */
+  --card-foreground: 40 20% 92%;
+  --card-border: 36 6% 13%;
 
-  --popover: 228 11% 17%;
-  --popover-foreground: 60 30% 96%;
-  --popover-border: 240 7% 15%;
+  --sidebar: 36 9% 8%;          /* #141210 — sidebar slightly darker */
+  --sidebar-foreground: 40 20% 92%;
+  --sidebar-border: 36 6% 11%;
 
-  --primary: 252 100% 68%;      /* #7C5CFF */
-  --primary-foreground: 0 0% 100%;
-  
-  --secondary: 225 11% 20%;     /* #2E313A */
-  --secondary-foreground: 60 30% 96%;
+  --popover: 36 8% 10%;
+  --popover-foreground: 40 20% 92%;
+  --popover-border: 36 6% 13%;
 
-  --muted: 225 11% 20%;
-  --muted-foreground: 240 7% 67%; /* #A6A6B2 */
+  --primary: 38 52% 61%;        /* #C9A96E — muted warm gold */
+  --primary-foreground: 36 10% 6%;
 
-  --accent: 213 100% 68%;       /* #5EA7FF */
-  --accent-foreground: 0 0% 100%;
+  --secondary: 36 7% 13%;       /* #201E1B — elevated surface */
+  --secondary-foreground: 40 20% 92%;
 
-  --destructive: 0 84% 60%;     /* #EF4444 */
-  --destructive-foreground: 0 0% 100%;
+  --muted: 36 7% 13%;
+  --muted-foreground: 36 5% 42%; /* #6B6760 — warm medium gray */
 
-  --border: 240 7% 15%;
-  --input: 240 7% 15%;
-  --ring: 252 100% 68%;
+  --accent: 36 7% 16%;          /* subtle hover/accent surface */
+  --accent-foreground: 40 20% 92%;
+
+  --destructive: 4 50% 52%;     /* #C0544A — muted terracotta red */
+  --destructive-foreground: 40 20% 92%;
+
+  --border: 36 6% 13%;
+  --input: 36 6% 13%;
+  --ring: 38 52% 61%;
 
   --app-font-sans: 'Inter', sans-serif;
   --app-font-serif: 'Manrope', sans-serif;
