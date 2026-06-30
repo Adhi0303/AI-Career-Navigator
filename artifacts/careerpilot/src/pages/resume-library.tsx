@@ -10,12 +10,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { CareerProfile } from '@workspace/api-zod';
+import { useQuery } from '@tanstack/react-query';
 
 export default function ResumeLibrary() {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
-  const [parsedProfile, setParsedProfile] = useState<CareerProfile | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Fetch profile from DB
+  const { data: parsedProfile, refetch } = useQuery({
+    queryKey: ['careerProfile'],
+    queryFn: async () => {
+      const res = await fetch("http://localhost:3000/api/profile");
+      if (!res.ok) throw new Error("Failed to fetch profile");
+      const data = await res.json();
+      return data.profile as CareerProfile | null;
+    }
+  });
 
   const container = {
     hidden: { opacity: 0 },
@@ -56,11 +67,13 @@ export default function ResumeLibrary() {
         throw new Error(data.error || "Failed to parse resume");
       }
 
-      setParsedProfile(data.profile);
+      // Re-fetch profile from DB after successful upload
+      await refetch();
+      
       setIsDialogOpen(false);
       toast({
-        title: "Resume Parsed Successfully!",
-        description: "Groq AI has extracted your career profile.",
+        title: "Resume Parsed & Saved!",
+        description: "Your career profile has been extracted and saved to the database.",
       });
     } catch (error: any) {
       toast({
@@ -99,10 +112,10 @@ export default function ResumeLibrary() {
               <p><strong className="text-primary">Email:</strong> {parsedProfile.personalInfo?.email || 'N/A'}</p>
               <p><strong className="text-primary">Skills:</strong> {parsedProfile.skills.join(', ')}</p>
             </div>
-            <div>
-              <p><strong className="text-primary">Experience:</strong> {parsedProfile.experience.length} Roles Found</p>
-              <p><strong className="text-primary">Projects:</strong> {parsedProfile.projects.length} Projects Found</p>
-              <p><strong className="text-primary">Education:</strong> {parsedProfile.education.length} Degrees Found</p>
+            <div className="space-y-2">
+              <p><strong className="text-primary">Experience:</strong> {parsedProfile.experience.map(e => `${e.role} at ${e.company}`).join(' | ') || 'None found'}</p>
+              <p><strong className="text-primary">Projects:</strong> {parsedProfile.projects.map(p => p.name).join(', ') || 'None found'}</p>
+              <p><strong className="text-primary">Education:</strong> {parsedProfile.education.map(e => e.degree).join(', ') || 'None found'}</p>
             </div>
           </div>
         </motion.div>

@@ -5,6 +5,7 @@ export const CareerProfileSchema = z.object({
     name: z.string().optional().nullable(),
     email: z.string().optional().nullable(),
     phone: z.string().optional().nullable(),
+    location: z.string().optional().nullable(),
     // Accept any string for links — AI often returns bare paths like "in/Adarsh-S03/"
     links: z.array(z.string()).optional().nullable(),
   }).optional(),

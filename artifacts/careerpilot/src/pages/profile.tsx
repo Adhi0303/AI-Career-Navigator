@@ -6,10 +6,53 @@ import { ProjectCard } from '@/components/cards/ProjectCard';
 import { TimelineCard } from '@/components/cards/TimelineCard';
 import { mockCareerProfile } from '@/mock/mockCareerProfile';
 import { Button } from '@/components/ui/button';
-import { Edit2, MapPin, Mail, Globe, Briefcase, GraduationCap, Award } from 'lucide-react';
+import { Edit2, MapPin, Mail, Globe, Briefcase, GraduationCap, Award, Github, Linkedin } from 'lucide-react';
+
+import { CareerProfile } from '@workspace/api-zod';
+import { useQuery } from '@tanstack/react-query';
+import { Loader2 } from 'lucide-react';
 
 export default function Profile() {
-  const { name, title, about, skills, projects, experience, education, certifications } = mockCareerProfile;
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['careerProfile'],
+    queryFn: async () => {
+      const res = await fetch("http://localhost:3000/api/profile");
+      if (!res.ok) throw new Error("Failed to fetch profile");
+      const data = await res.json();
+      return data.profile as CareerProfile | null;
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex h-[50vh] flex-col items-center justify-center gap-4">
+        <h2 className="text-xl font-bold">No Profile Found</h2>
+        <p className="text-muted-foreground text-center">Go to the Resume Library and upload a resume to generate your Career Profile.</p>
+      </div>
+    );
+  }
+
+  // Map API data to the component structure
+  const name = profile.personalInfo?.name || 'Unknown';
+  const title = profile.experience?.[0]?.role || 'Professional';
+  const about = profile.summary || 'No summary provided.';
+  const email = profile.personalInfo?.email || '';
+  
+  // Group skills by generic categories (since our simple schema just has a flat array)
+  const groupedSkills = profile.skills.reduce((acc, skill) => {
+    // Just a placeholder grouping for the UI
+    if (!acc['Core Skills']) acc['Core Skills'] = [];
+    acc['Core Skills'].push(skill);
+    return acc;
+  }, {} as Record<string, string[]>);
 
   return (
     <motion.div 
@@ -31,9 +74,27 @@ export default function Profile() {
               <p className="text-xl font-medium text-primary mt-1">{title}</p>
               
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> San Francisco, CA</span>
-                <span className="flex items-center gap-1.5"><Mail className="w-4 h-4" /> adhi@example.com</span>
-                <span className="flex items-center gap-1.5"><Globe className="w-4 h-4" /> adhi.dev</span>
+                {profile.personalInfo?.location && (
+                  <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {profile.personalInfo.location}</span>
+                )}
+                {profile.personalInfo?.email && (
+                  <span className="flex items-center gap-1.5"><Mail className="w-4 h-4" /> {profile.personalInfo.email}</span>
+                )}
+                {profile.personalInfo?.links?.map((link, i) => {
+                  const isGithub = link.toLowerCase().includes('github');
+                  const isLinkedin = link.toLowerCase().includes('linkedin');
+                  const Icon = isGithub ? Github : isLinkedin ? Linkedin : Globe;
+                  const displayLink = link.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+                  const href = link.startsWith('http') ? link : `https://${link}`;
+                  return (
+                    <span key={i} className="flex items-center gap-1.5">
+                      <Icon className="w-4 h-4" />
+                      <a href={href} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                        {displayLink}
+                      </a>
+                    </span>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -55,15 +116,15 @@ export default function Profile() {
           <section>
             <SectionHeader title="Experience" action={<Button variant="ghost" size="icon"><Edit2 className="w-4 h-4" /></Button>} />
             <div className="pt-2 pl-2">
-              {experience.map((exp, i) => (
+              {profile.experience?.map((exp, i) => (
                 <TimelineCard 
-                  key={exp.id}
+                  key={i}
                   title={exp.company}
                   subtitle={exp.role}
                   description={exp.description}
-                  date={exp.period}
+                  date={`${exp.startDate || ''} - ${exp.endDate || 'Present'}`}
                   icon={Briefcase}
-                  isLast={i === experience.length - 1}
+                  isLast={i === (profile.experience?.length || 0) - 1}
                 />
               ))}
             </div>
@@ -72,14 +133,14 @@ export default function Profile() {
           <section>
             <SectionHeader title="Featured Projects" action={<Button variant="ghost" size="icon"><Edit2 className="w-4 h-4" /></Button>} />
             <div className="grid gap-4">
-              {projects.map((project) => (
+              {profile.projects?.map((project, i) => (
                 <ProjectCard 
-                  key={project.id}
+                  key={i}
                   name={project.name}
-                  role={project.role}
+                  role="Creator"
                   description={project.description}
-                  tech={project.tech}
-                  github={project.link}
+                  tech={project.technologies}
+                  github={project.link || '#'}
                 />
               ))}
             </div>
@@ -90,7 +151,7 @@ export default function Profile() {
           <section>
             <SectionHeader title="Skills" action={<Button variant="ghost" size="icon"><Edit2 className="w-4 h-4" /></Button>} />
             <div className="p-6 rounded-xl bg-card border border-border neu-raised space-y-6">
-              {Object.entries(skills).map(([category, catSkills]) => (
+              {Object.entries(groupedSkills).map(([category, catSkills]) => (
                 <div key={category}>
                   <h4 className="text-sm font-medium text-muted-foreground mb-3">{category}</h4>
                   <div className="flex flex-wrap gap-2">
@@ -106,15 +167,15 @@ export default function Profile() {
           <section>
             <SectionHeader title="Education" action={<Button variant="ghost" size="icon"><Edit2 className="w-4 h-4" /></Button>} />
             <div className="grid gap-4">
-              {education.map((edu) => (
-                <div key={edu.id} className="p-5 rounded-xl bg-card border border-border neu-raised flex gap-4">
+              {profile.education?.map((edu, i) => (
+                <div key={i} className="p-5 rounded-xl bg-card border border-border neu-raised flex gap-4">
                   <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
                     <GraduationCap className="w-5 h-5 text-primary" />
                   </div>
                   <div>
                     <h4 className="font-bold text-foreground">{edu.institution}</h4>
                     <p className="text-sm text-primary font-medium mt-1">{edu.degree}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{edu.year}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{edu.startDate} - {edu.endDate}</p>
                   </div>
                 </div>
               ))}
@@ -124,14 +185,14 @@ export default function Profile() {
           <section>
             <SectionHeader title="Certifications" action={<Button variant="ghost" size="icon"><Edit2 className="w-4 h-4" /></Button>} />
             <div className="grid gap-4">
-              {certifications.map((cert) => (
-                <div key={cert.id} className="p-5 rounded-xl bg-card border border-border neu-raised flex gap-4">
+              {profile.certifications?.map((cert, i) => (
+                <div key={i} className="p-5 rounded-xl bg-card border border-border neu-raised flex gap-4">
                   <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
                     <Award className="w-5 h-5 text-accent" />
                   </div>
                   <div>
                     <h4 className="font-bold text-foreground">{cert.name}</h4>
-                    <p className="text-sm text-muted-foreground mt-1">{cert.issuer} • {cert.year}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{cert.issuer} • {cert.date}</p>
                   </div>
                 </div>
               ))}

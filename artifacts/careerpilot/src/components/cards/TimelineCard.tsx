@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 interface TimelineCardProps {
   title: string;
   subtitle: string;
-  description?: string;
+  description?: string | string[];
   date: string;
   icon: React.ElementType;
   isLast?: boolean;
@@ -29,9 +29,17 @@ export function TimelineCard({ title, subtitle, description, date, icon: Icon, i
           </div>
           <h4 className="text-sm font-medium text-primary mb-3">{subtitle}</h4>
           {description && (
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {description}
-            </p>
+            <div className="text-sm text-muted-foreground leading-relaxed">
+              {Array.isArray(description) ? (
+                <ul className="list-disc pl-5 space-y-1">
+                  {description.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>{description}</p>
+              )}
+            </div>
           )}
         </div>
       </div>
