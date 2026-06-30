@@ -17,6 +17,25 @@ async function getUserSkills(userId: number): Promise<string[]> {
   return rows.map(r => r.skill).filter(Boolean) as string[];
 }
 
+// ─── Helper: extract skills from raw text without calling Groq ───────────────
+// Adzuna already gives structured data. We scan the description for known tech
+// keywords to avoid hammering the Groq API on every single Adzuna result.
+const TECH_KEYWORDS = [
+  "javascript","typescript","python","java","c++","c#","go","rust","ruby","php","swift","kotlin",
+  "react","vue","angular","nextjs","next.js","nuxt","svelte","html","css","tailwind","bootstrap",
+  "node","nodejs","express","fastapi","django","flask","spring","laravel","rails",
+  "sql","postgresql","mysql","mongodb","redis","elasticsearch","firebase","supabase","neon",
+  "docker","kubernetes","aws","gcp","azure","terraform","ci/cd","github actions","jenkins",
+  "git","graphql","rest","grpc","kafka","rabbitmq","websocket",
+  "machine learning","deep learning","llm","openai","pytorch","tensorflow","nlp","ai",
+  "linux","bash","shell","nginx","apache","microservices","serverless",
+];
+
+function extractSkillsFromText(text: string): string[] {
+  const lower = text.toLowerCase();
+  return TECH_KEYWORDS.filter(kw => lower.includes(kw));
+}
+
 // ─── Helper: dedup & insert one job ─────────────────────────────────────────
 async function insertJobIfNew(
   job: {
@@ -49,58 +68,53 @@ async function insertJobIfNew(
       requiredSkills: job.requiredSkills,
       matchScore,
     });
-    return true; // new job inserted
+    return true;
   } catch (err: any) {
-    // unique constraint violation = duplicate, silently skip
+    // unique constraint = duplicate URL, silently skip
     if (err?.code === "23505" || err?.message?.includes("unique")) return false;
     throw err;
   }
 }
 
-// ─── GET /api/jobs ────────────────────────────────────────────────────────────
-const getJobsHandler: RequestHandler = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const jobs = await db
-      .select()
-      .from(jobsTable)
-      .orderBy(desc(jobsTable.matchScore));
-
-    res.json({ success: true, jobs });
-  } catch (error: any) {
-    req.log.error(error, "Error fetching jobs");
-    res.status(500).json({ success: false, error: "Failed to fetch jobs" });
-  }
-};
-
 // ─── POST /api/jobs/fetch ─────────────────────────────────────────────────────
-// Triggers Adzuna bulk fetch, parses with Groq, deduplicates, stores in DB.
+// IMPORTANT: Declared BEFORE GET /api/jobs so Express doesn't shadow this route.
+// Triggers Adzuna bulk fetch, extracts skills locally, deduplicates, stores in DB.
 const fetchJobsHandler: RequestHandler = async (req: Request, res: Response): Promise<void> => {
-  const { query = "software developer", location = "India", page = 1 } = req.body;
+  const { query = "software developer", location = "", page = 1 } = req.body;
   const userId = 1;
 
   try {
     const userSkills = await getUserSkills(userId);
-    const rawJobs = await fetchAdzunaJobs(query, location, page);
+    const rawJobs = await fetchAdzunaJobs(query, location, Number(page));
 
     let added = 0;
 
     for (const raw of rawJobs) {
       try {
-        // Use Adzuna's already-structured data — pass description to Groq for skill extraction
-        const parsed = await extractJobFromText(
-          `Company: ${raw.company.display_name}\nRole: ${raw.title}\nLocation: ${raw.location.display_name}\n\n${raw.description}`
+        const combinedText = `${raw.title} ${raw.description}`;
+        const skills = extractSkillsFromText(combinedText);
+
+        const type = raw.contract_time === "full_time"
+          ? "Full-time"
+          : raw.contract_time === "part_time"
+          ? "Part-time"
+          : null;
+
+        const isNew = await insertJobIfNew(
+          {
+            company: raw.company.display_name,
+            role: raw.title,
+            location: raw.location.display_name,
+            salary: formatAdzunaSalary(raw),
+            type,
+            description: raw.description?.slice(0, 2000) || null,
+            requiredSkills: skills,
+          },
+          raw.redirect_url,
+          "adzuna",
+          userSkills
         );
 
-        // Override company/role/location from Adzuna's structured fields for accuracy
-        parsed.company = raw.company.display_name;
-        parsed.role = raw.title;
-        parsed.location = raw.location.display_name;
-        if (!parsed.salary) parsed.salary = formatAdzunaSalary(raw);
-        if (!parsed.type && raw.contract_time) {
-          parsed.type = raw.contract_time === "full_time" ? "Full-time" : "Part-time";
-        }
-
-        const isNew = await insertJobIfNew(parsed, raw.redirect_url, "adzuna", userSkills);
         if (isNew) added++;
       } catch (err) {
         req.log.warn({ jobId: raw.id }, "Failed to process one Adzuna job, skipping");
@@ -115,7 +129,7 @@ const fetchJobsHandler: RequestHandler = async (req: Request, res: Response): Pr
 };
 
 // ─── POST /api/jobs/import-url ────────────────────────────────────────────────
-// Scrapes any URL with Firecrawl, parses with Groq, deduplicates, stores in DB.
+// Scrapes any URL with Firecrawl, uses Groq for full structured extraction.
 const importJobFromUrlHandler: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   const { url } = req.body;
   const userId = 1;
@@ -132,25 +146,33 @@ const importJobFromUrlHandler: RequestHandler = async (req: Request, res: Respon
 
     const isNew = await insertJobIfNew(parsed, url, "firecrawl", userSkills);
 
-    if (!isNew) {
-      // Job already exists — fetch and return it
-      const hash = crypto.createHash("sha256").update(url).digest("hex");
-      const existing = await db.select().from(jobsTable).where(eq(jobsTable.urlHash, hash)).limit(1);
-      res.json({ success: true, job: existing[0], duplicate: true });
-      return;
-    }
-
     const hash = crypto.createHash("sha256").update(url).digest("hex");
     const saved = await db.select().from(jobsTable).where(eq(jobsTable.urlHash, hash)).limit(1);
-    res.json({ success: true, job: saved[0], duplicate: false });
+    res.json({ success: true, job: saved[0], duplicate: !isNew });
   } catch (error: any) {
     req.log.error(error, "Error importing job from URL");
     res.status(500).json({ success: false, error: error.message || "Failed to import job from URL" });
   }
 };
 
-jobsRouter.get("/jobs", getJobsHandler);
+// ─── GET /api/jobs ────────────────────────────────────────────────────────────
+const getJobsHandler: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const jobs = await db
+      .select()
+      .from(jobsTable)
+      .orderBy(desc(jobsTable.matchScore));
+
+    res.json({ success: true, jobs });
+  } catch (error: any) {
+    req.log.error(error, "Error fetching jobs");
+    res.status(500).json({ success: false, error: "Failed to fetch jobs" });
+  }
+};
+
+// IMPORTANT: Register POST routes BEFORE the GET /jobs route to prevent shadowing
 jobsRouter.post("/jobs/fetch", fetchJobsHandler);
 jobsRouter.post("/jobs/import-url", importJobFromUrlHandler);
+jobsRouter.get("/jobs", getJobsHandler);
 
 export default jobsRouter;

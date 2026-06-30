@@ -4,8 +4,6 @@
  * Region: India (in)
  */
 
-const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID!;
-const ADZUNA_APP_KEY = process.env.ADZUNA_APP_KEY!;
 const ADZUNA_BASE_URL = "https://api.adzuna.com/v1/api/jobs/in/search";
 
 export interface AdzunaJob {
@@ -37,20 +35,26 @@ export async function fetchAdzunaJobs(
   page: number = 1,
   resultsPerPage: number = 20
 ): Promise<AdzunaJob[]> {
-  if (!ADZUNA_APP_ID || !ADZUNA_APP_KEY) {
+  const appId = process.env.ADZUNA_APP_ID;
+  const appKey = process.env.ADZUNA_APP_KEY;
+
+  if (!appId || !appKey) {
     throw new Error("Missing ADZUNA_APP_ID or ADZUNA_APP_KEY in environment variables");
   }
 
+  // Only include `where` if a location is actually provided
   const params = new URLSearchParams({
-    app_id: ADZUNA_APP_ID,
-    app_key: ADZUNA_APP_KEY,
+    app_id: appId,
+    app_key: appKey,
     what: query,
-    where: location,
     results_per_page: String(resultsPerPage),
-    page: String(page),
-    content_type: "application/json",
   });
 
+  if (location && location.trim() !== "") {
+    params.set("where", location.trim());
+  }
+
+  // Page number goes in the URL path only — NOT as a query param
   const url = `${ADZUNA_BASE_URL}/${page}?${params.toString()}`;
 
   const res = await fetch(url, {
