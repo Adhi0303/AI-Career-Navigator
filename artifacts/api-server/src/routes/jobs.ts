@@ -1,7 +1,7 @@
 import { Router, type Request, type Response, type RequestHandler } from "express";
 import crypto from "crypto";
 import { db, jobsTable, skillsTable, profileTable } from "@workspace/db";
-import { eq, desc, sql, isNotNull } from "drizzle-orm";
+import { eq, desc, sql, isNotNull, getTableColumns } from "drizzle-orm";
 import { fetchAdzunaJobs, formatAdzunaSalary } from "../lib/adzuna";
 import { scrapeUrl } from "../lib/firecrawl";
 import { extractJobFromText, computeMatchScore } from "../lib/groq";
@@ -210,7 +210,7 @@ const getRankedJobsHandler: RequestHandler = async (req: Request, res: Response)
 
     const jobs = await db
       .select({
-        ...jobsTable,
+        ...getTableColumns(jobsTable),
         semanticScore: similarityScore,
       })
       .from(jobsTable)
