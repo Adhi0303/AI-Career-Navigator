@@ -158,8 +158,12 @@ export default function JobDiscovery() {
   return (
     <div className="space-y-8 pb-12">
       {/* ── Hero Header ── */}
-      <div className="max-w-3xl mx-auto space-y-6 text-center relative">
-        <div className="absolute right-0 top-0 flex gap-2">
+      <div className="max-w-3xl mx-auto space-y-4 text-center">
+        <h1 className="text-4xl font-bold font-serif text-foreground">Find Your Next Move</h1>
+        <p className="text-lg text-muted-foreground">
+          Real job listings from Adzuna, scored against your profile skills in real-time.
+        </p>
+        <div className="flex justify-center gap-3 pt-2">
           <Button variant="outline" size="sm" onClick={() => embedProfileMutation.mutate()} disabled={embedProfileMutation.isPending}>
             {embedProfileMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
             Embed Profile
@@ -169,10 +173,6 @@ export default function JobDiscovery() {
             Embed Jobs
           </Button>
         </div>
-        <h1 className="text-4xl font-bold font-serif text-foreground">Find Your Next Move</h1>
-        <p className="text-lg text-muted-foreground">
-          Real job listings from Adzuna, scored against your profile skills in real-time.
-        </p>
       </div>
 
       {/* ── Action Bar: Fetch from Adzuna ── */}

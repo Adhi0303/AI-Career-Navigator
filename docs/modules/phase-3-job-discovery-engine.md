@@ -1,34 +1,39 @@
 # Phase 3: Job Discovery Engine (Completed)
 
 ## Overview
-The Job Discovery Engine bridges the gap between the user's parsed career profile (Phase 2) and the real-world job market. It automatically pulls live job listings, standardizes their format, dedupes them to prevent clutter, and calculates a real-time match score based on the overlap between the user's skills and the job's requirements.
+The Job Discovery Engine bridges the gap between the user's parsed career profile (Phase 2) and the real-world job market. It automatically pulls live job listings, standardizes their format, dedupes them to prevent clutter, and calculates real-time match scores. This matching uses a hybrid approach: traditional keyword overlap alongside **advanced AI semantic vector embeddings** for conceptual matching.
 
 ## Key Sub-modules & Architecture
 
 ### 1. External API Integrations
-- **Adzuna API (`lib/adzuna.ts`)**: Used as the primary data source for fetching live job listings. The backend handles the Adzuna integration natively, querying based on job title and location.
-- **Firecrawl API (`lib/firecrawl.ts`)**: Provides a fallback mechanism allowing users to paste a URL from any major job board (LinkedIn, Naukri, etc.). Firecrawl scrapes the URL and converts the listing into clean Markdown.
-- **Groq API (`lib/groq.ts`)**: An LLM is used to parse the raw Firecrawl markdown into a strict, structured JSON format containing the exact fields required by our database schema. (For Adzuna, we bypass the LLM and use a local keyword scanner to extract skills and save on API rate limits.)
+- **Adzuna API (`lib/adzuna.ts`)**: Used as the primary data source for fetching live job listings based on title and location.
+- **Firecrawl API (`lib/firecrawl.ts`)**: Scrapes single job postings from URLs (LinkedIn, Naukri, etc.) and converts them into Markdown.
+- **Groq API (`lib/groq.ts`)**: Extracts structured JSON data from scraped raw job descriptions.
+- **Jina AI Embeddings (`lib/embeddings.ts`)**: Connects to the Jina AI API (`jina-embeddings-v3`) to generate 384-dimensional mathematical vectors for both user profiles and job descriptions, enabling semantic search.
 
 ### 2. Database & Data Pipeline
-- **Schema (`schema/jobs.ts`)**: Uses PostgreSQL via Drizzle ORM to store jobs.
-- **Deduplication**: We generate a `SHA-256` hash of the `sourceUrl` before inserting a job. The DB schema enforces a `UNIQUE` constraint on this hash, silently catching and discarding duplicate listings regardless of how often a user refreshes.
-- **Match Scoring**: Calculated server-side at insertion time. The `computeMatchScore` helper compares the user's `skills` array against the job's `requiredSkills` array, generating a percentage score from 0-100.
+- **Schema (`schema/jobs.ts`, `schema/profiles.ts`)**: Uses PostgreSQL via Drizzle ORM. Profiles and jobs have a `vector(384)` column powered by `pgvector` for embeddings.
+- **Deduplication**: We generate a `SHA-256` hash of the `sourceUrl` before inserting a job with a `UNIQUE` constraint on this hash.
+- **Hybrid Match Scoring**:
+  - **Keyword Score**: Server-side comparison of the user's `skills` array against the job's `requiredSkills` array (0-100).
+  - **Semantic Score**: Uses Postgres vector cosine distance `<=>` to calculate the mathematical similarity between the profile vector and the job vector in real-time.
 
 ### 3. Application Programming Interface (API)
-- **`GET /api/jobs`**: Retrieves all saved jobs from the database, ordered descending by `matchScore`.
-- **`POST /api/jobs/fetch`**: Hits the Adzuna API, extracts skills via local keyword matching, scores them, and bulk inserts deduplicated records.
-- **`POST /api/jobs/import-url`**: Calls Firecrawl to scrape a user-provided URL, passes the text to Groq for structured JSON extraction, scores the job, and inserts it into the database.
-- **Global Rate Limiting**: Implemented via `express-rate-limit` to restrict the API to 100 requests per 15 minutes, protecting against accidental spamming of our Groq and Firecrawl credits.
+- **`GET /api/jobs/ranked`**: Retrieves all saved jobs ordered by `semanticScore` (using pgvector sorting) or falls back to keyword `matchScore`.
+- **`POST /api/jobs/fetch`**: Hits the Adzuna API, extracts skills, and bulk inserts deduplicated records.
+- **`POST /api/jobs/import-url`**: Calls Firecrawl to scrape a user-provided URL and processes it via Groq.
+- **`POST /api/embed/profile`**: Generates and saves the vector embedding for the current user's profile.
+- **`POST /api/embed/jobs`**: Batch generates and saves vector embeddings for all jobs missing an embedding.
+- **Global Rate Limiting**: Implemented via `express-rate-limit`.
 
 ### 4. Frontend Implementation
-- **Job Discovery UI (`job-discovery.tsx`)**: Replaces the static mockup with a dynamic page powered by `@tanstack/react-query` to manage server state.
-- Provides forms to query Adzuna by keyword/location, and a separate input to import single jobs by URL.
-- Renders jobs in a list, visually highlighting the Match Score (out of 100).
+- **Job Discovery UI (`job-discovery.tsx`)**: Dynamic page using `@tanstack/react-query`.
+- **Embedding Actions**: "Embed Profile" and "Embed Jobs" buttons allow users to manually trigger the embedding generation process.
+- **Score Display**: Renders jobs visually highlighting both the Keyword Score and the Semantic Score.
 
 ## Current Status & Next Steps
-- **Status**: ✅ Fully Implemented and Tested.
-- **Notes**: The Adzuna credentials require the `app_id` and `app_key` environment variables, loaded safely after app initialization to prevent Node.js hoisting issues.
+- **Status**: ✅ Fully Implemented, Tested, and Integrated. Semantic matching via Jina AI is fully functional and stable (Node 24 compatible).
+- **Next Steps**: Move to Phase 4 (Job Intelligence & Cover Letter Generator).
 
 ---
 *Generated by CareerPilot AI.*

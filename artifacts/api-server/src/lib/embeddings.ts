@@ -58,7 +58,7 @@ export async function generateBatchEmbeddings(texts: string[]): Promise<number[]
         model: JINA_MODEL,
         input: texts.map((t) => t.slice(0, 8000)),
         task: "text-matching",
-        dimensions: 512,
+        dimensions: 384,
       }),
     });
 
