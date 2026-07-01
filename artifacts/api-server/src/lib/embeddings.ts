@@ -1,31 +1,41 @@
 import { logger } from "./logger";
-import { pipeline } from "@xenova/transformers";
 
-// A singleton promise to hold the extractor
-class PipelineSingleton {
-  static task = "feature-extraction";
-  static model = "Xenova/all-MiniLM-L6-v2";
-  static instance: any = null;
+const JINA_API_URL = "https://api.jina.ai/v1/embeddings";
+const JINA_MODEL = "jina-embeddings-v3";
 
-  static async getInstance(progress_callback?: Function) {
-    if (this.instance === null) {
-      this.instance = await pipeline(this.task, this.model, { progress_callback });
-    }
-    return this.instance;
-  }
+function getJinaKey(): string {
+  const key = process.env.JINA_API_KEY;
+  if (!key) throw new Error("JINA_API_KEY is not set in environment variables");
+  return key;
 }
 
 /**
- * Generate an embedding for a single text using local ONNX model
+ * Generate an embedding for a single text using Jina AI.
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
-    const extractor = await PipelineSingleton.getInstance();
-    
-    // pooling: 'mean' and normalize: true are required to match standard sentence-transformers
-    const output = await extractor(text, { pooling: "mean", normalize: true });
-    
-    return Array.from(output.data);
+    const res = await fetch(JINA_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${getJinaKey()}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        model: JINA_MODEL,
+        input: [text.slice(0, 8000)],
+        task: "text-matching",
+        dimensions: 384,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(`Jina API error ${res.status}: ${JSON.stringify(err)}`);
+    }
+
+    const data = (await res.json()) as { data: { embedding: number[] }[] };
+    return data.data[0].embedding;
   } catch (error) {
     logger.error({ err: error }, "Failed to generate embedding");
     throw error;
@@ -33,18 +43,35 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 }
 
 /**
- * Generate embeddings for multiple texts in a batch.
+ * Generate embeddings for multiple texts in a batch using Jina AI.
  */
 export async function generateBatchEmbeddings(texts: string[]): Promise<number[][]> {
   try {
-    const extractor = await PipelineSingleton.getInstance();
-    
-    const output = await extractor(texts, { pooling: "mean", normalize: true });
-    
-    // The output is a tensor, we need to convert it to an array of arrays
-    return output.tolist();
+    const res = await fetch(JINA_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${getJinaKey()}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        model: JINA_MODEL,
+        input: texts.map((t) => t.slice(0, 8000)),
+        task: "text-matching",
+        dimensions: 512,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(`Jina API error ${res.status}: ${JSON.stringify(err)}`);
+    }
+
+    const data = (await res.json()) as { data: { embedding: number[] }[] };
+    return data.data.map((d) => d.embedding);
   } catch (error) {
     logger.error({ err: error }, "Failed to generate batch embeddings");
     throw error;
   }
 }
+

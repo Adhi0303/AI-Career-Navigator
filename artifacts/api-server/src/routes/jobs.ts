@@ -200,15 +200,17 @@ const getRankedJobsHandler: RequestHandler = async (req: Request, res: Response)
   try {
     const [profile] = await db.select({ embedding: profileTable.embedding }).from(profileTable).where(eq(profileTable.id, userId)).limit(1);
     
+    // If no profile embedding yet, fall back to returning jobs sorted by keyword match score
     if (!profile?.embedding) {
-      res.status(400).json({ success: false, error: "User profile embedding not found. Please embed the profile first." });
+      const jobs = await db.select().from(jobsTable).orderBy(desc(jobsTable.matchScore));
+      res.json({ success: true, jobs, semanticEnabled: false });
       return;
     }
 
     // Using raw SQL for cosine similarity (1 - (jobs.embedding <=> profile.embedding))
     const similarityScore = sql<number>`1 - (${jobsTable.embedding} <=> ${JSON.stringify(profile.embedding)}::vector)`;
 
-    const jobs = await db
+    const rankedJobs = await db
       .select({
         ...getTableColumns(jobsTable),
         semanticScore: similarityScore,
@@ -217,7 +219,10 @@ const getRankedJobsHandler: RequestHandler = async (req: Request, res: Response)
       .where(isNotNull(jobsTable.embedding))
       .orderBy(desc(similarityScore));
 
-    res.json({ success: true, jobs });
+    // Also include jobs without embeddings at the end
+    const unrankedJobs = await db.select().from(jobsTable).where(sql`${jobsTable.embedding} IS NULL`).orderBy(desc(jobsTable.matchScore));
+
+    res.json({ success: true, jobs: [...rankedJobs, ...unrankedJobs], semanticEnabled: true });
   } catch (error: any) {
     req.log.error(error, "Error fetching ranked jobs");
     res.status(500).json({ success: false, error: "Failed to fetch ranked jobs" });
