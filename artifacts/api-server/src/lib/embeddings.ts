@@ -1,7 +1,6 @@
 import pino from "pino";
 import { logger } from "./logger";
 
-const HF_API_KEY = process.env.HUGGINGFACE_API_KEY;
 const MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2";
 const HF_API_URL = `https://api-inference.huggingface.co/pipeline/feature-extraction/${MODEL_ID}`;
 
@@ -13,6 +12,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * Includes retry logic with exponential backoff for cold-starts.
  */
 export async function generateEmbedding(text: string, retries = 3): Promise<number[]> {
+  const HF_API_KEY = process.env.HUGGINGFACE_API_KEY;
   if (!HF_API_KEY) {
     throw new Error("HUGGINGFACE_API_KEY is not defined in environment variables");
   }
@@ -51,6 +51,7 @@ export async function generateEmbedding(text: string, retries = 3): Promise<numb
  * Generate embeddings for multiple texts in a batch.
  */
 export async function generateBatchEmbeddings(texts: string[], retries = 3): Promise<number[][]> {
+  const HF_API_KEY = process.env.HUGGINGFACE_API_KEY;
   if (!HF_API_KEY) {
     throw new Error("HUGGINGFACE_API_KEY is not defined in environment variables");
   }
