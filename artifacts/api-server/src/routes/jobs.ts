@@ -1,10 +1,11 @@
 import { Router, type Request, type Response, type RequestHandler } from "express";
 import crypto from "crypto";
-import { db, jobsTable, skillsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { db, jobsTable, skillsTable, profileTable } from "@workspace/db";
+import { eq, desc, sql, isNotNull } from "drizzle-orm";
 import { fetchAdzunaJobs, formatAdzunaSalary } from "../lib/adzuna";
 import { scrapeUrl } from "../lib/firecrawl";
 import { extractJobFromText, computeMatchScore } from "../lib/groq";
+import { generateEmbedding } from "../lib/embeddings";
 
 const jobsRouter = Router();
 
@@ -76,6 +77,16 @@ async function insertJobIfNew(
   }
 }
 
+// ─── Helper: Background Embedding ──────────────────────────────────────────
+async function triggerBackgroundEmbedding(jobId: number, text: string) {
+  try {
+    const embedding = await generateEmbedding(text.slice(0, 1000));
+    await db.update(jobsTable).set({ embedding }).where(eq(jobsTable.id, jobId));
+  } catch (e) {
+    console.error("Background embedding failed for job", jobId, e);
+  }
+}
+
 // ─── POST /api/jobs/fetch ─────────────────────────────────────────────────────
 // IMPORTANT: Declared BEFORE GET /api/jobs so Express doesn't shadow this route.
 // Triggers Adzuna bulk fetch, extracts skills locally, deduplicates, stores in DB.
@@ -115,7 +126,15 @@ const fetchJobsHandler: RequestHandler = async (req: Request, res: Response): Pr
           userSkills
         );
 
-        if (isNew) added++;
+        if (isNew) {
+          added++;
+          // Fetch the newly inserted job to get its ID for background embedding
+          const hash = crypto.createHash("sha256").update(raw.redirect_url).digest("hex");
+          const [saved] = await db.select({ id: jobsTable.id }).from(jobsTable).where(eq(jobsTable.urlHash, hash)).limit(1);
+          if (saved) {
+            triggerBackgroundEmbedding(saved.id, combinedText);
+          }
+        }
       } catch (err) {
         req.log.warn({ jobId: raw.id }, "Failed to process one Adzuna job, skipping");
       }
@@ -148,6 +167,11 @@ const importJobFromUrlHandler: RequestHandler = async (req: Request, res: Respon
 
     const hash = crypto.createHash("sha256").update(url).digest("hex");
     const saved = await db.select().from(jobsTable).where(eq(jobsTable.urlHash, hash)).limit(1);
+    
+    if (isNew && saved[0]) {
+      triggerBackgroundEmbedding(saved[0].id, `${parsed.role} at ${parsed.company}. ${parsed.description || ""}`);
+    }
+
     res.json({ success: true, job: saved[0], duplicate: !isNew });
   } catch (error: any) {
     req.log.error(error, "Error importing job from URL");
@@ -170,9 +194,40 @@ const getJobsHandler: RequestHandler = async (req: Request, res: Response): Prom
   }
 };
 
+// ─── GET /api/jobs/ranked ─────────────────────────────────────────────────────
+const getRankedJobsHandler: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  const userId = 1;
+  try {
+    const [profile] = await db.select({ embedding: profileTable.embedding }).from(profileTable).where(eq(profileTable.id, userId)).limit(1);
+    
+    if (!profile?.embedding) {
+      res.status(400).json({ success: false, error: "User profile embedding not found. Please embed the profile first." });
+      return;
+    }
+
+    // Using raw SQL for cosine similarity (1 - (jobs.embedding <=> profile.embedding))
+    const similarityScore = sql<number>`1 - (${jobsTable.embedding} <=> ${JSON.stringify(profile.embedding)}::vector)`;
+
+    const jobs = await db
+      .select({
+        ...jobsTable,
+        semanticScore: similarityScore,
+      })
+      .from(jobsTable)
+      .where(isNotNull(jobsTable.embedding))
+      .orderBy(desc(similarityScore));
+
+    res.json({ success: true, jobs });
+  } catch (error: any) {
+    req.log.error(error, "Error fetching ranked jobs");
+    res.status(500).json({ success: false, error: "Failed to fetch ranked jobs" });
+  }
+};
+
 // IMPORTANT: Register POST routes BEFORE the GET /jobs route to prevent shadowing
 jobsRouter.post("/jobs/fetch", fetchJobsHandler);
 jobsRouter.post("/jobs/import-url", importJobFromUrlHandler);
+jobsRouter.get("/jobs/ranked", getRankedJobsHandler);
 jobsRouter.get("/jobs", getJobsHandler);
 
 export default jobsRouter;

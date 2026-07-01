@@ -10,12 +10,13 @@ interface JobCardProps {
   location: string;
   salary: string;
   match: number;
+  semanticMatch?: number;
   skills: string[];
   remote: boolean;
   onClick?: () => void;
 }
 
-export function JobCard({ company, role, location, salary, match, skills, remote, onClick }: JobCardProps) {
+export function JobCard({ company, role, location, salary, match, semanticMatch, skills, remote, onClick }: JobCardProps) {
   return (
     <motion.div 
       whileHover={{ scale: 1.01 }}
@@ -50,9 +51,17 @@ export function JobCard({ company, role, location, salary, match, skills, remote
       </div>
       
       <div className="flex flex-row sm:flex-col items-center justify-between sm:justify-center w-full sm:w-auto gap-4 sm:gap-6 border-t border-border sm:border-t-0 sm:border-l sm:pl-6 pt-4 sm:pt-0">
-        <div className="flex flex-col items-center">
-          <ProgressRing value={match} size={64} strokeWidth={6} color={match >= 90 ? "hsl(var(--primary))" : "hsl(var(--accent))"} />
-          <span className="text-xs font-medium text-muted-foreground mt-1 text-center">Match</span>
+        <div className="flex gap-4">
+          <div className="flex flex-col items-center">
+            <ProgressRing value={match} size={56} strokeWidth={5} color={match >= 90 ? "hsl(var(--primary))" : "hsl(var(--accent))"} />
+            <span className="text-[10px] uppercase font-bold text-muted-foreground mt-1 text-center tracking-wider">Keyword</span>
+          </div>
+          {semanticMatch !== undefined && (
+            <div className="flex flex-col items-center">
+              <ProgressRing value={Math.round(semanticMatch * 100)} size={56} strokeWidth={5} color="#8b5cf6" />
+              <span className="text-[10px] uppercase font-bold text-purple-500 mt-1 text-center tracking-wider">Semantic</span>
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <Button size="icon" variant="outline" className="neu-button h-10 w-10 shrink-0">

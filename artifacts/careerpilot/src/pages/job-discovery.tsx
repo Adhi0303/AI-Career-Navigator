@@ -25,6 +25,7 @@ interface StoredJob {
   description: string | null;
   requiredSkills: string[];
   matchScore: number;
+  semanticScore?: number;
   sourceUrl: string;
   source: string;
   createdAt: string;
@@ -44,13 +45,50 @@ export default function JobDiscovery() {
   const [fetchLocation, setFetchLocation] = useState('');
 
   // ─── Fetch all jobs ──────────────────────────────────────────────────────
-  const { data: jobs = [], isLoading } = useQuery<StoredJob[]>({
+  const { data: jobs = [], isLoading, isError, error, refetch: refetchJobs } = useQuery<StoredJob[]>({
     queryKey: ['jobs'],
     queryFn: async () => {
-      const res = await fetch(`${API}/jobs`);
-      if (!res.ok) throw new Error('Failed to fetch jobs');
+      // Try ranked jobs first
+      const res = await fetch(`${API}/jobs/ranked`);
       const data = await res.json();
+      
+      if (!res.ok || !data.success) {
+        // Fall back to unranked if profile not embedded
+        if (res.status === 400) {
+          const fallback = await fetch(`${API}/jobs`);
+          const fallbackData = await fallback.json();
+          return fallbackData.jobs as StoredJob[];
+        }
+        throw new Error(data.error || 'Failed to fetch jobs');
+      }
       return data.jobs as StoredJob[];
+    }
+  });
+
+  // ─── Embed Actions ──────────────────────────────────────────────────────
+  const embedProfileMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API}/embed/profile`, { method: 'POST' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: '✅ Profile embedded successfully', description: 'Semantic match is now active.' });
+      refetchJobs();
+    }
+  });
+
+  const embedJobsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API}/embed/jobs`, { method: 'POST' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({ title: `✅ Embedded ${data.embedded} jobs!`, description: 'Semantic match scores updated.' });
+      refetchJobs();
     }
   });
 
@@ -120,7 +158,17 @@ export default function JobDiscovery() {
   return (
     <div className="space-y-8 pb-12">
       {/* ── Hero Header ── */}
-      <div className="max-w-3xl mx-auto space-y-6 text-center">
+      <div className="max-w-3xl mx-auto space-y-6 text-center relative">
+        <div className="absolute right-0 top-0 flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => embedProfileMutation.mutate()} disabled={embedProfileMutation.isPending}>
+            {embedProfileMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+            Embed Profile
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => embedJobsMutation.mutate()} disabled={embedJobsMutation.isPending}>
+            {embedJobsMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+            Embed Jobs
+          </Button>
+        </div>
         <h1 className="text-4xl font-bold font-serif text-foreground">Find Your Next Move</h1>
         <p className="text-lg text-muted-foreground">
           Real job listings from Adzuna, scored against your profile skills in real-time.
@@ -232,6 +280,7 @@ export default function JobDiscovery() {
                 location={job.location || 'India'}
                 salary={job.salary || 'Not stated'}
                 match={job.matchScore}
+                semanticMatch={job.semanticScore}
                 skills={job.requiredSkills || []}
                 remote={job.type?.toLowerCase().includes('remote') || false}
                 onClick={() => setSelectedJob(job)}
@@ -252,8 +301,17 @@ export default function JobDiscovery() {
                     <h2 className="text-2xl font-bold text-foreground">{selectedJob.role}</h2>
                     <p className="text-lg font-medium text-primary mt-1">{selectedJob.company}</p>
                   </div>
-                  <div className="flex-shrink-0">
-                    <ProgressRing value={selectedJob.matchScore} size={64} strokeWidth={6} />
+                  <div className="flex-shrink-0 flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <ProgressRing value={selectedJob.matchScore} size={64} strokeWidth={6} />
+                      <span className="text-xs uppercase font-bold text-muted-foreground mt-1">Keyword</span>
+                    </div>
+                    {selectedJob.semanticScore !== undefined && (
+                      <div className="flex flex-col items-center">
+                        <ProgressRing value={Math.round(selectedJob.semanticScore * 100)} size={64} strokeWidth={6} color="#8b5cf6" />
+                        <span className="text-xs uppercase font-bold text-purple-500 mt-1">Semantic</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

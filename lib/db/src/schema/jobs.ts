@@ -1,4 +1,5 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, real } from "drizzle-orm/pg-core";
+import { vector } from "./custom-types";
 
 export const jobsTable = pgTable("jobs", {
   id: serial("id").primaryKey(),
@@ -12,6 +13,8 @@ export const jobsTable = pgTable("jobs", {
   type: text("type"), // "Full-time" | "Remote" | "Contract"
   description: text("description"),
   requiredSkills: text("required_skills").array().default([]),
-  matchScore: integer("match_score").default(0),
+  matchScore: integer("match_score").default(0), // keyword-based match
+  embedding: vector("embedding", { dimensions: 384 }), // semantic vector
+  semanticScore: real("semantic_score"), // latest cosine similarity score
   createdAt: timestamp("created_at").defaultNow(),
 });
